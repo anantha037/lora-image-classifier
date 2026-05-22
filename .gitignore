@@ -1,0 +1,9 @@
+data/
+outputs/checkpoints/
+__pycache__/
+*.pyc
+.env
+*.egg-info
+.ipynb_checkpoints/
+wandb/
+mlruns/
