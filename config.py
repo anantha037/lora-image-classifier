@@ -12,7 +12,7 @@ class Config:
     LORA_RANK: int = 8
     LORA_ALPHA: int = 16
     LORA_DROPOUT: float = 0.1
-    LORA_TARGET_MODULES: list = field(default_factory=lambda: ["query", "value"])
+    LORA_TARGET_MODULES: list = field(default_factory=lambda: ["qkv"])
     SELECTED_CLASSES: list = field(default_factory=lambda: [
         "Apple___Apple_scab", "Apple___Black_rot", "Apple___Cedar_apple_rust", "Apple___healthy",
         "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot", "Corn_(maize)___Common_rust_", 
