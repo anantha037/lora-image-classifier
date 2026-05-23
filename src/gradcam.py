@@ -53,8 +53,12 @@ def generate_gradcam(model, image_tensor, class_idx, device):
     # Unwrap PEFT to access base ViT
     base_model = model.base_model.model
     
-    # Target the last attention block's norm1 for Grad-CAM
-    target_layer = base_model.blocks[-1].norm1
+    # Target the last attention block's proj for Grad-CAM
+    target_layer = base_model.blocks[-1].attn.proj
+    
+    # Temporarily enable gradients on the target layer
+    for param in target_layer.parameters():
+        param.requires_grad_(True)
     
     # Initialize GradCAM
     cam = GradCAM(
@@ -116,7 +120,7 @@ def overlay_gradcam(original_image_path, cam, save_path, pred_class="", confiden
     return heatmap
 
 
-def explain_batch(model, image_paths, config, class_names):
+def explain_batch(model, image_paths, config, class_names=None):
     """
     Processes a list of image paths, runs inference, generates Grad-CAM overlays, 
     and saves them.
@@ -125,11 +129,14 @@ def explain_batch(model, image_paths, config, class_names):
         model (PeftModel): The trained model.
         image_paths (List[str]): List of paths to images.
         config (Config): Configuration object.
-        class_names (List[str]): List of class names.
+        class_names (List[str]): List of class names. (Defaults to config.SELECTED_CLASSES)
         
     Returns:
         List[dict]: Results containing image path, prediction, confidence, and saved cam path.
     """
+    if class_names is None:
+        class_names = config.SELECTED_CLASSES
+
     # Val/Test transforms (must match dataset.py)
     val_transform = transforms.Compose([
         transforms.Resize(256),
@@ -156,9 +163,14 @@ def explain_batch(model, image_paths, config, class_names):
                 
             conf = conf.item() * 100.0
             pred_idx = pred_idx.item()
+            
+            if pred_idx >= len(class_names):
+                print(f"Warning: pred_idx {pred_idx} out of range, skipping.")
+                continue
+                
             pred_class = class_names[pred_idx]
             
-            # 3. Generate Grad-CAM
+            # 3. Generate Grad-CAM (outside of torch.no_grad())
             cam = generate_gradcam(model, tensor, pred_idx, config.DEVICE)
             
             # 4. Save overlay
@@ -195,7 +207,7 @@ def run_gradcam_demo(config):
     
     # Load model and class names
     model = load_adapter(config, config.CHECKPOINT_DIR)
-    class_names = get_class_names(config)
+    class_names = config.SELECTED_CLASSES
     
     # Find sample images (2 from each class)
     dataset_root = Path(config.DATASET_ROOT)
@@ -203,13 +215,16 @@ def run_gradcam_demo(config):
     
     for cls in class_names:
         cls_dir = dataset_root / cls
-        if cls_dir.exists():
-            imgs = [p for p in cls_dir.glob("*.*") if p.suffix.lower() in [".jpg", ".jpeg", ".png"]]
-            if len(imgs) >= 2:
-                selected = random.sample(imgs, 2)
-            else:
-                selected = imgs
-            sample_paths.extend([str(p) for p in selected])
+        if not cls_dir.exists():
+            print(f"Skipping missing class folder: {cls}")
+            continue
+            
+        imgs = [p for p in cls_dir.glob("*.*") if p.suffix.lower() in [".jpg", ".jpeg", ".png"]]
+        if len(imgs) >= 2:
+            selected = random.sample(imgs, 2)
+        else:
+            selected = imgs
+        sample_paths.extend([str(p) for p in selected])
             
     if not sample_paths:
         print("No images found for Grad-CAM demo. Please check your dataset.")
