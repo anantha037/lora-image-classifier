@@ -56,15 +56,11 @@ def generate_gradcam(model, image_tensor, class_idx, device):
     # Target the last attention block's norm1 for Grad-CAM
     target_layer = base_model.blocks[-1].norm1
     
-    # Determine if CUDA should be used
-    use_cuda = True if (isinstance(device, str) and "cuda" in device) or (isinstance(device, torch.device) and device.type == "cuda") else False
-    
     # Initialize GradCAM
     cam = GradCAM(
         model=model, 
         target_layers=[target_layer], 
         reshape_transform=reshape_transform, 
-        use_cuda=use_cuda
     )
     
     # Generate CAM
