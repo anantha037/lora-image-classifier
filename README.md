@@ -74,6 +74,7 @@ The colors represent the model's spatial attention when making its prediction.
 lora-image-classifier/
 ├── api/
 │   └── main.py                # FastAPI application with predict/explain endpoints
+├── app.py                     # Gradio demo app with Predict and Explain tabs
 ├── notebooks/
 │   └── colab_training.ipynb   # Full Colab training notebook with Drive integration
 ├── src/
@@ -123,6 +124,17 @@ uvicorn api.main:app --reload --port 8000
 ```
 Interactive API docs will be available at: http://localhost:8000/docs
 
+### 7. Run Gradio Demo
+Launch the interactive Gradio demo for visual testing:
+```bash
+uvicorn api.main:app --reload --port 8080
+```
+Then in a separate terminal:
+```bash
+python app.py
+```
+Demo will be available at: http://localhost:7860
+
 ## 🌐 API Documentation
 
 | Endpoint | Method | Description | Input | Output |
@@ -162,6 +174,7 @@ curl -X 'POST' \
 | **grad-cam** | 1.5.0 | Explaining model predictions visually |
 | **FastAPI** | 0.108.0 | High-performance async web API framework |
 | **scikit-learn** | 1.3.2 | Stratified train/val/test data splitting |
+| **Gradio** | 4.0+ | Interactive ML demo interface |
 
 ## 🎓 What I Learned
 
@@ -169,6 +182,7 @@ curl -X 'POST' \
 - **ViT Architecture and Attention Mechanism:** I gained deep insights into how Vision Transformers divide images into patches, process sequence tokens, and route information through Multi-Head Self-Attention layers.
 - **Grad-CAM Reshape Transform:** I tackled the specific challenge of implementing Grad-CAM for token-based architectures. This required writing custom transformations to bypass the CLS token and reconstruct 2D spatial feature grids from flat sequences.
 - **Production API Design with FastAPI Lifespan:** I mastered serving PyTorch models in a robust production setting, specifically utilizing async context managers (`lifespan`) to load the model securely at startup and avoid memory leaks.
+- **Gradio Demo Interface:** Built an interactive web demo using Gradio with separate tabs for prediction and Grad-CAM explanation, making the model accessible without any frontend code.
 
 ## 📄 License
 
