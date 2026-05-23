@@ -8,9 +8,36 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import Config
 
+SELECTED_CLASSES = [
+    "Apple___Apple_scab",
+    "Apple___Black_rot",
+    "Apple___Cedar_apple_rust",
+    "Apple___healthy",
+    "Corn___Common_rust",
+    "Grape___Black_rot",
+    "Grape___healthy",
+    "Potato___Early_blight",
+    "Tomato___Bacterial_spot",
+    "Tomato___healthy"
+]
+
 def download_and_prepare():
     dataset = "vipoooool/new-plant-diseases-dataset"
     raw_dir = Path("data/raw")
+    target_root = Path(Config.DATASET_ROOT)
+    
+    # Check if dataset already has the classes populated
+    if target_root.exists():
+        all_exist = True
+        for class_name in SELECTED_CLASSES:
+            class_dir = target_root / class_name
+            if not class_dir.exists() or len(list(class_dir.glob("*.*"))) == 0:
+                all_exist = False
+                break
+        if all_exist:
+            print("Dataset already populated with selected classes. Skipping download.")
+            return
+
     raw_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"Downloading {dataset}...")
@@ -20,60 +47,65 @@ def download_and_prepare():
         print(f"Failed to download dataset. Ensure Kaggle API is configured. Error: {e}")
         return
 
-    # Search for 'train' directory in the unzipped contents
+    # Search for 'train' and 'valid' directories in the unzipped contents
     train_dir = None
+    valid_dir = None
     for root, dirs, files in os.walk(raw_dir):
         if "train" in dirs:
             train_dir = Path(root) / "train"
-            break
+        if "valid" in dirs:
+            valid_dir = Path(root) / "valid"
             
     if not train_dir or not train_dir.exists():
         print("Could not find 'train' directory in the downloaded dataset.")
         return
+    if not valid_dir or not valid_dir.exists():
+        print("Could not find 'valid' directory in the downloaded dataset.")
 
-    # Count images per class
-    class_counts = {}
-    for d in train_dir.iterdir():
-        if d.is_dir():
-            class_counts[d.name] = len(list(d.glob("*.*")))
-
-    # Select top 10 most common classes
-    top_classes = sorted(class_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-    top_class_names = [name for name, _ in top_classes]
-
-    print(f"\nTop 10 selected classes:")
-    for name, count in top_classes:
-        print(f"  {name}: {count} images")
-
-    # Organize them into data/plantvillage/<class_name>/
-    target_root = Path(Config.DATASET_ROOT)
     target_root.mkdir(parents=True, exist_ok=True)
 
     total_images = 0
-    for class_name in top_class_names:
+    print("\nOrganizing selected classes:")
+    for class_name in SELECTED_CLASSES:
         class_target = target_root / class_name
         class_target.mkdir(parents=True, exist_ok=True)
         
-        # Combine both train and valid images into one pool (we will split them using dataset.py)
-        source_train = train_dir / class_name
-        source_valid = train_dir.parent / "valid" / class_name if train_dir.parent.joinpath("valid").exists() else None
-        
-        sources = [source_train]
-        if source_valid and source_valid.exists():
-            sources.append(source_valid)
-            
+        # Find matching folder in train_dir
+        train_match = None
+        if (train_dir / class_name).exists():
+            train_match = train_dir / class_name
+        else:
+            # Fuzzy match
+            class_keywords = class_name.lower().replace("___", " ").replace("_", " ").split()
+            for d in train_dir.iterdir():
+                if d.is_dir():
+                    d_name_lower = d.name.lower().replace("___", " ").replace("_", " ")
+                    if all(k in d_name_lower for k in class_keywords):
+                        train_match = d
+                        break
+                        
+        sources = []
+        if train_match:
+            sources.append(train_match)
+            # Try to find corresponding valid folder
+            if valid_dir and valid_dir.exists():
+                valid_match = valid_dir / train_match.name
+                if valid_match.exists():
+                    sources.append(valid_match)
+        else:
+            print(f"  Warning: Could not find matching folder for {class_name} in dataset.")
+            continue
+
         copied_for_class = 0
         for src in sources:
-            if not src.exists(): continue
             for img in src.glob("*.*"):
                 shutil.copy2(img, class_target / img.name)
                 copied_for_class += 1
                 
         total_images += copied_for_class
-        print(f"Copied {copied_for_class} images for class '{class_name}'")
+        print(f"  {class_name}: {copied_for_class} images")
 
     print(f"\nTotal images organized: {total_images}")
-    print(f"Please ensure config.py SELECTED_CLASSES has these classes: {top_class_names}")
 
 if __name__ == "__main__":
     download_and_prepare()

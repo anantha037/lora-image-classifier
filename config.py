@@ -14,9 +14,16 @@ class Config:
     LORA_DROPOUT: float = 0.1
     LORA_TARGET_MODULES: list = field(default_factory=lambda: ["qkv"])
     SELECTED_CLASSES: list = field(default_factory=lambda: [
-        "Apple___Apple_scab", "Apple___Black_rot", "Apple___Cedar_apple_rust", "Apple___healthy",
-        "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot", "Corn_(maize)___Common_rust_", 
-        "Corn_(maize)___Northern_Leaf_Blight", "Corn_(maize)___healthy", "Grape___Black_rot", "Grape___Esca_(Black_Measles)"
+        "Apple___Apple_scab",
+        "Apple___Black_rot",
+        "Apple___Cedar_apple_rust",
+        "Apple___healthy",
+        "Corn___Common_rust",
+        "Grape___Black_rot",
+        "Grape___healthy",
+        "Potato___Early_blight",
+        "Tomato___Bacterial_spot",
+        "Tomato___healthy"
     ])
     TRAIN_SPLIT: float = 0.7
     VAL_SPLIT: float = 0.15
