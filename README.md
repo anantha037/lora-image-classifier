@@ -1,4 +1,4 @@
-# 🌿 LoRA Image Classifier: Plant Disease Detection
+# 🌿 LoRA Fine-Tuned Plant Disease Classifier with Grad-CAM Explainability
 
 ![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=white)
@@ -7,7 +7,7 @@
 
 ## 📖 Project Overview
 
-This project implements a production-grade **vit_base_patch16_224** model from **timm** for plant disease classification using Parameter-Efficient Fine-Tuning (PEFT). By leveraging Low-Rank Adaptation (LoRA), we drastically reduce the computational resources required for training while maintaining state-of-the-art accuracy on a 3-class subset of the PlantVillage dataset (Apple Scab, Black Rot, Healthy). The model correctly identifies plant health states—vital for precision agriculture and early disease intervention.
+This project implements a production-grade **vit_base_patch16_224** model from **timm** for plant disease classification using Parameter-Efficient Fine-Tuning (PEFT). By leveraging Low-Rank Adaptation (LoRA), we drastically reduce the computational resources required for training while maintaining state-of-the-art accuracy on a 10-class subset of the PlantVillage dataset (Apple Scab, Apple Black Rot, Apple Cedar Rust, Apple Healthy, Corn Common Rust, Grape Black Rot, Grape Healthy, Potato Early Blight, Tomato Bacterial Spot, Tomato Healthy). The model correctly identifies plant health states—vital for precision agriculture and early disease intervention.
 
 The headline achievement of this pipeline is its efficiency: **only 0.35% of the model parameters are trained**. Instead of fine-tuning the entire network, LoRA injects trainable low-rank matrices into the target `qkv` attention layers across all 12 blocks. This enables rapid training on a single T4 GPU in Google Colab while preventing catastrophic forgetting of the foundational features learned by the base ViT model.
 
@@ -47,12 +47,13 @@ To bridge the gap between model accuracy and real-world trust, this project inte
 | Metric | Value |
 |--------|-------|
 | **Test Accuracy** | 100% |
+| **Number of Classes** | 10 |
 | **Trainable Parameters** | 302,602 (0.35%) |
 | **Total Parameters** | 86,101,258 |
-| **Dataset** | PlantVillage (3-class subset: Apple Scab, Black Rot, Healthy) |
 | **Training Device** | Google Colab T4 GPU |
 | **LoRA Rank** | 8 |
 | **LoRA Alpha** | 16 |
+| **Base Model** | vit_base_patch16_224 |
 
 ## 🔍 Grad-CAM Visualizations
 
@@ -62,6 +63,10 @@ To bridge the gap between model accuracy and real-world trust, this project inte
 The colors represent the model's spatial attention when making its prediction. 
 - **Red/Yellow regions:** High attention. The model focused heavily on these specific pixels (e.g., disease spots or lesions) to determine the class.
 - **Blue/Cool regions:** Low attention. These areas were deemed irrelevant to the final prediction.
+
+### Misclassifications
+
+> Note: Tomato Bacterial Spot shows some confusion with Potato Early Blight — both present as brown lesion patterns, a known challenge in plant pathology datasets.
 
 ## 📁 Project Structure
 
