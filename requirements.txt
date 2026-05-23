@@ -14,3 +14,4 @@ kaggle>=1.6.3
 numpy>=1.26.3
 scikit-learn>=1.4.0
 tqdm>=4.66.1
+torchao>=0.16.0
